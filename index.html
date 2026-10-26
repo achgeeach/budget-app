@@ -4,41 +4,55 @@
 .auth-card{width:100%;max-width:360px;box-sizing:border-box;background:var(--surface-1);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;gap:16px}
 .auth-title{margin:0;font-size:20px;font-weight:600;color:var(--text-primary)}
 .auth-desc{margin:0;font-size:13px;line-height:1.5;color:var(--text-secondary)}
-.auth-btn{font-family:inherit;font-size:14px;font-weight:600;height:40px;padding:0 16px;width:100%;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:opacity .15s ease,transform .1s ease}
-.auth-btn:hover{opacity:.9}.auth-btn:active{transform:scale(.97)}.auth-btn:disabled{opacity:.5;cursor:default}
-.auth-btn-secondary{background:var(--surface-2);color:var(--text-primary)}
-.auth-btn-primary{background:var(--accent);color:#fff;border-color:transparent}
-.auth-divider{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted)}
-.auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--border)}
 .auth-form{display:flex;flex-direction:column;gap:8px;margin:0}
-.auth-input{font-family:inherit;font-size:16px;height:40px;padding:0 12px;width:100%;box-sizing:border-box;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2);color:var(--text-primary)}
-.auth-input:focus{outline:2px solid var(--accent);outline-offset:0}
-.auth-msg{margin:0;min-height:20px;font-size:13px;line-height:1.5;color:var(--text-secondary)}
-.auth-msg.is-error{color:var(--danger-text)}
-.profile-account{display:flex;flex-direction:column;align-items:center;gap:4px;margin:0 0 16px;text-align:center}
-.profile-account-email{font-size:12px;color:var(--text-muted);overflow-wrap:anywhere}
-.profile-logout-link{font-family:inherit;font-size:13px;font-weight:600;color:var(--danger-text);background:none;border:none;padding:4px 8px;border-radius:var(--radius-sm);cursor:pointer;text-decoration:underline;text-underline-offset:4px}
-.profile-logout-link:hover{background:var(--danger-soft)}
-.profile-logout-link:focus-visible{outline:2px solid var(--danger);outline-offset:2px}
+.auth-label{font-size:12.5px;font-weight:500;color:var(--text-secondary)}
+.auth-input,.profile-input{display:block;font-family:inherit;font-size:16px;height:40px;padding:0 12px;width:100%;box-sizing:border-box;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2);color:var(--text-primary);transition:border-color .15s ease,box-shadow .15s ease}
+.auth-input:focus,.profile-input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.auth-input+.auth-label{margin-top:8px}
+.auth-btn{font-family:inherit;font-size:14px;font-weight:600;height:40px;margin-top:8px;padding:0 16px;width:100%;border-radius:var(--radius-sm);border:none;cursor:pointer;background:var(--accent);color:#fff;transition:opacity .15s ease,transform .1s ease}
+.auth-btn:hover{opacity:.9}.auth-btn:active{transform:scale(.97)}.auth-btn:disabled{opacity:.5;cursor:default}
+.auth-links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.auth-link{font-family:inherit;font-size:13px;font-weight:500;color:var(--accent);background:none;border:none;padding:4px 0;cursor:pointer}
+.auth-link:hover{text-decoration:underline;text-underline-offset:4px}
+.auth-link:focus-visible,.auth-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.auth-msg{margin:0;font-size:13px;line-height:1.5;color:var(--text-secondary)}
+.auth-msg:empty{display:none}
+.auth-msg.is-error,.profile-account-msg{color:var(--danger-text)}
+.profile-input{font-size:13.5px;height:auto;padding:8px 12px;margin-bottom:16px}
+@supports (-webkit-touch-callout:none){.profile-input{font-size:16px}}
+.profile-account-msg{margin:-8px 0 16px;font-size:12.5px;line-height:1.5}
+.profile-account-msg:empty{display:none}
+.profile-input[aria-invalid=true],.profile-input[aria-invalid=true]:focus{border-color:var(--danger)}
+.modal-btn-logout{margin-right:auto;background:transparent;color:var(--danger-text)}
+.modal-btn-logout:hover{opacity:1;background:var(--danger-soft)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.3/dist/umd/supabase.js"></script>
 <script>
 (function(){
-  // ---- Paste your Supabase project values here ----
-  const SUPABASE_URL = "https://txhbzdalmtehbzymsssc.supabase.co";      // e.g. https://abcd1234.supabase.co
-  const SUPABASE_KEY = "sb_publishable_CD3kCLOvwYDrDRWX_xy0NQ_pmgvXsrr";  // sb_publishable_... (or the legacy "anon" key). Never the secret/service_role key.
-  // --------------------------------------------------
-  const GOOGLE_ENABLED = false; // set to true after Google is turned on in Supabase (Authentication > Sign In / Providers)
-  const TABLE = "budgets", CACHE = "budget-state";
-  if (!window.supabase || SUPABASE_URL.indexOf("PASTE") === 0) return; // not configured yet: app keeps saving on this device only
+  // ---- Supabase project values ----
+  const SUPABASE_URL = "https://txhbzdalmtehbzymsssc.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_CD3kCLOvwYDrDRWX_xy0NQ_pmgvXsrr"; // publishable key: safe in the browser. Never the secret key.
+  // ----------------------------------
+  const TABLE = "budgets", CACHE = "budget-state", MIN_PASSWORD = 6;
+  if (!window.supabase || SUPABASE_URL.indexOf("PASTE") === 0) return; // not configured: app keeps saving on this device only
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
   window.sb = sb;
   const redirectTo = location.origin + location.pathname;
-  let user = null, gate = null, resolveUser;
+  let user = null, gate = null, resolveUser, recovering = false;
   const userReady = new Promise(r => { resolveUser = r; });
+  const emailOk = e => /^\S+@\S+\.\S+$/.test(e);
+
+  function friendly(err){
+    const m = (err && err.message) || String(err || "Something went wrong.");
+    if (/rate limit/i.test(m)) return "Too many emails sent. Please try again in about an hour.";
+    if (/invalid login credentials/i.test(m)) return "That email and password don't match.";
+    if (/email not confirmed/i.test(m)) return "Confirm your email first. Check your inbox for the link.";
+    if (/already registered/i.test(m)) return "There's already an account with that email. Try signing in.";
+    return m;
+  }
 
   function setUser(u){
     if (user || !u) return;
@@ -48,6 +62,7 @@
   }
 
   function showGate(){
+    let mode = "signin";
     gate = document.createElement("div");
     gate.className = "auth-gate";
     gate.setAttribute("role", "dialog");
@@ -56,41 +71,70 @@
     gate.innerHTML =
       '<div class="auth-card">' +
         '<h1 id="authTitle" class="auth-title">Monthly Budget</h1>' +
-        '<p class="auth-desc">Sign in to keep your budget synced across your devices.</p>' +
-        '<button type="button" class="auth-btn auth-btn-secondary" id="authGoogle">Continue with Google</button>' +
-        '<div class="auth-divider">or</div>' +
-        '<form class="auth-form" id="authEmailForm" novalidate>' +
-          '<label class="auth-desc" for="authEmail">Email</label>' +
-          '<input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required>' +
-          '<button type="submit" class="auth-btn auth-btn-primary" id="authEmailBtn">Email me a sign-in link</button>' +
+        '<p class="auth-desc" id="authDesc"></p>' +
+        '<form class="auth-form" id="authForm" novalidate>' +
+          '<label class="auth-label" for="authEmail">Email</label>' +
+          '<input class="auth-input" id="authEmail" name="email" type="email" autocomplete="username" placeholder="you@example.com" required>' +
+          '<label class="auth-label" for="authPassword">Password</label>' +
+          '<input class="auth-input" id="authPassword" name="password" type="password" required>' +
+          '<button type="submit" class="auth-btn" id="authSubmit"></button>' +
         '</form>' +
         '<p class="auth-msg" id="authMsg" role="status" aria-live="polite"></p>' +
+        '<div class="auth-links"><button type="button" class="auth-link" id="authForgot">Forgot password?</button><button type="button" class="auth-link" id="authToggle"></button></div>' +
       '</div>';
     document.body.appendChild(gate);
-    const msg = gate.querySelector("#authMsg");
-    const say = (text, isError) => { msg.textContent = text; msg.classList.toggle("is-error", !!isError); };
+    const $ = id => gate.querySelector("#" + id);
+    const say = (text, isError) => { $("authMsg").textContent = text || ""; $("authMsg").classList.toggle("is-error", !!isError); };
+    function render(){
+      const up = mode === "signup";
+      $("authDesc").textContent = up ? "Create an account to sync your budget across your devices." : "Sign in to keep your budget synced across your devices.";
+      $("authSubmit").textContent = up ? "Create account" : "Sign in";
+      $("authToggle").textContent = up ? "I already have an account" : "Create an account";
+      $("authPassword").setAttribute("autocomplete", up ? "new-password" : "current-password");
+      $("authPassword").placeholder = up ? "At least " + MIN_PASSWORD + " characters" : "";
+      $("authForgot").hidden = up;
+    }
+    render();
     const q = new URLSearchParams(location.search);
     if (q.get("error_description")) say(q.get("error_description"), true);
 
-    if (!GOOGLE_ENABLED) { gate.querySelector("#authGoogle").remove(); gate.querySelector(".auth-divider").remove(); }
-    else gate.querySelector("#authGoogle").addEventListener("click", async () => {
-      const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
-      if (error) say(error.message, true);
+    $("authToggle").addEventListener("click", () => { mode = mode === "signin" ? "signup" : "signin"; say(""); render(); $("authEmail").focus(); });
+
+    $("authForgot").addEventListener("click", async () => {
+      const email = $("authEmail").value.trim();
+      if (!emailOk(email)) { say("Enter your email above, then tap Forgot password.", true); $("authEmail").focus(); return; }
+      $("authForgot").disabled = true;
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+      $("authForgot").disabled = false;
+      say(error ? friendly(error) : "Check your email for a link to reset your password.", !!error);
     });
-    gate.querySelector("#authEmailForm").addEventListener("submit", async e => {
+
+    $("authForm").addEventListener("submit", async e => {
       e.preventDefault();
-      const email = gate.querySelector("#authEmail").value.trim();
-      if (!/^\S+@\S+\.\S+$/.test(email)) { say("Enter a valid email address.", true); return; }
-      const btn = gate.querySelector("#authEmailBtn");
-      btn.disabled = true;
-      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
-      btn.disabled = false;
-      if (error) say(error.message, true);
-      else say("Check your email for a sign-in link, and open it in this same browser.");
+      const email = $("authEmail").value.trim(), password = $("authPassword").value;
+      if (!emailOk(email)) { say("Enter a valid email address.", true); $("authEmail").focus(); return; }
+      if (password.length < (mode === "signup" ? MIN_PASSWORD : 1)) {
+        say(mode === "signup" ? "Use at least " + MIN_PASSWORD + " characters for your password." : "Enter your password.", true);
+        $("authPassword").focus(); return;
+      }
+      const btn = $("authSubmit");
+      btn.disabled = true; say("");
+      try {
+        if (mode === "signin") {
+          const { error } = await sb.auth.signInWithPassword({ email, password });
+          if (error) say(friendly(error), true);
+        } else {
+          const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
+          if (error) say(friendly(error), true);
+          else if (!data.session) say("Almost done: check your email to confirm your account, then sign in here.");
+        }
+      } finally { btn.disabled = false; }
     });
+    $("authEmail").focus();
   }
 
   sb.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") recovering = true;
     if (session && session.user) setTimeout(() => setUser(session.user), 0);
     if (event === "SIGNED_OUT") { try { localStorage.removeItem(CACHE); } catch (e) {} location.reload(); }
   });
@@ -104,7 +148,7 @@
     async get(){
       const u = await userReady;
       // First sign-in for this account: show the welcome walkthrough once (it pre-fills from any saved budget).
-      if (!(u.user_metadata && u.user_metadata.welcomed)) {
+      if (!(u.user_metadata && u.user_metadata.welcomed) && !recovering) {
         history.replaceState(null, "", location.pathname + location.search + "#welcome");
         sb.auth.updateUser({ data: { welcomed: true } }).catch(() => {});
       }
@@ -130,26 +174,78 @@
     }
   };
 
-  // "Log out" link in the Profile dialog
-  userReady.then(u => {
-    const anchor = document.getElementById("profileWelcomeBtn");
-    if (!anchor) return;
-    const wrap = document.createElement("div");
-    wrap.className = "profile-account";
-    if (u.email) {
-      const who = document.createElement("span");
-      who.className = "profile-account-email";
-      who.textContent = "Signed in as " + u.email;
-      wrap.appendChild(who);
-    }
-    const b = document.createElement("button");
-    b.type = "button";
-    b.id = "profileLogoutBtn";
-    b.className = "profile-logout-link";
-    b.textContent = "Log out";
-    b.addEventListener("click", async () => { b.disabled = true; b.textContent = "Logging out\u2026"; await sb.auth.signOut(); });
-    wrap.appendChild(b);
-    anchor.after(wrap);
+  // Profile dialog: Email + New password fields, and a Log out button in the action row.
+  userReady.then(() => {
+    const overlay = document.getElementById("profileOverlay");
+    const form = document.getElementById("profileForm");
+    const nameInput = document.getElementById("profileNameInput");
+    const actions = form && form.querySelector(".modal-actions");
+    if (!overlay || !form || !nameInput || !actions) return;
+
+    const frag = document.createElement("div");
+    frag.innerHTML =
+      '<label class="profile-field-label" for="profileEmailInput">Email</label>' +
+      '<input class="profile-input" type="email" id="profileEmailInput" name="email" autocomplete="username" spellcheck="false" required>' +
+      '<label class="profile-field-label" for="profilePasswordInput">New password <span class="profile-optional">(Optional)</span></label>' +
+      '<input class="profile-input" type="password" id="profilePasswordInput" name="new-password" autocomplete="new-password" placeholder="Leave blank to keep current">' +
+      '<p class="profile-account-msg" id="profileAccountMsg" role="alert"></p>';
+    let after = nameInput;
+    [...frag.childNodes].forEach(n => { after.after(n); after = n; });
+    const emailIn = document.getElementById("profileEmailInput");
+    const passIn = document.getElementById("profilePasswordInput");
+    const msg = document.getElementById("profileAccountMsg");
+    const saveBtn = document.getElementById("profileSaveBtn");
+
+    const logout = document.createElement("button");
+    logout.type = "button";
+    logout.id = "profileLogoutBtn";
+    logout.className = "modal-btn modal-btn-logout";
+    logout.textContent = "Log out";
+    logout.addEventListener("click", async () => { logout.disabled = true; logout.textContent = "Logging out…"; await sb.auth.signOut(); });
+    actions.prepend(logout);
+
+    // Fill in the current email each time the dialog opens.
+    new MutationObserver(() => {
+      if (overlay.hidden) return;
+      emailIn.value = user.email || "";
+      passIn.value = "";
+      msg.textContent = ""; msg.style.color = "";
+      emailIn.removeAttribute("aria-invalid"); passIn.removeAttribute("aria-invalid");
+    }).observe(overlay, { attributes: true, attributeFilter: ["hidden"] });
+
+    // Save account changes before the app's own Save handler closes the dialog.
+    let passThrough = false;
+    document.addEventListener("submit", async e => {
+      if (e.target !== form || passThrough) return;
+      const email = emailIn.value.trim(), password = passIn.value;
+      const emailChanged = email.toLowerCase() !== (user.email || "").toLowerCase();
+      if (!emailChanged && !password) return; // nothing account-related changed
+      e.preventDefault(); e.stopPropagation();
+      const fail = (text, input) => { msg.textContent = text; input.setAttribute("aria-invalid", "true"); input.focus(); };
+      emailIn.removeAttribute("aria-invalid"); passIn.removeAttribute("aria-invalid");
+      if (!emailOk(email)) return fail("Enter a valid email address.", emailIn);
+      if (password && password.length < MIN_PASSWORD) return fail("Use at least " + MIN_PASSWORD + " characters for your password.", passIn);
+      saveBtn.disabled = true; msg.textContent = "";
+      const changes = {};
+      if (emailChanged) changes.email = email;
+      if (password) changes.password = password;
+      const { data, error } = await sb.auth.updateUser(changes, { emailRedirectTo: redirectTo });
+      saveBtn.disabled = false;
+      if (error) return fail(friendly(error), changes.email ? emailIn : passIn);
+      if (data && data.user) user = data.user;
+      passThrough = true; form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); passThrough = false;
+      const notes = [];
+      if (password) notes.push("Password updated");
+      if (emailChanged) notes.push("Check your email to confirm the change");
+      if (typeof window.setStatus === "function") setTimeout(() => window.setStatus(notes.join(". ")), 50);
+    }, true);
+
+    // Arrived from a "reset password" email: open Profile so a new password can be set.
+    if (recovering) setTimeout(() => {
+      if (typeof window.openProfileModal !== "function") return;
+      window.openProfileModal();
+      setTimeout(() => { msg.textContent = "Choose a new password, then tap Save."; msg.style.color = "var(--text-secondary)"; passIn.focus(); }, 50);
+    }, 1200);
   });
 })();
 </script>
