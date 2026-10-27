@@ -9,11 +9,34 @@ html.auth-locked body>:not(.auth-gate){visibility:hidden}
 .auth-card{width:100%;max-width:360px;margin:auto;box-sizing:border-box;background:var(--surface-1);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;gap:16px}
 .auth-title{margin:0;font-size:20px;font-weight:600;color:var(--text-primary)}
 .auth-desc{margin:0;font-size:13px;line-height:1.5;color:var(--text-secondary)}
+.auth-desc:empty{display:none}
+/* Login card fades and zooms up into place (same motion as the dashboard cards) */
+.auth-card{animation:authIn .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes authIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.auth-card{animation:authFade .2s ease-out both}}
+@keyframes authFade{from{opacity:0}to{opacity:1}}
+/* Switching Sign in <-> Create account: fields drift up (to Create account) or down (back to Sign in) */
+@keyframes authFwd{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes authBack{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+.auth-pass-wrap{position:relative}
+.auth-pass-wrap .auth-input{padding-right:48px}
+.auth-eye{position:absolute;top:0;right:0;width:44px;height:40px;display:flex;align-items:center;justify-content:center;padding:0;border:none;background:none;color:var(--text-muted);cursor:pointer;border-radius:var(--radius-sm);transition:color .15s ease}
+.auth-eye:hover{color:var(--text-secondary)}
+.auth-eye:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+.auth-eye svg{width:20px;height:20px}
+.auth-eye .eye-off,.auth-eye[aria-pressed=true] .eye-on{display:none}
+.auth-eye[aria-pressed=true] .eye-off{display:block}
+.auth-help{margin:-4px 0 0;font-size:12px;line-height:1.5;color:var(--text-secondary)}
+.auth-help[hidden]{display:none}
 .auth-form{display:flex;flex-direction:column;gap:8px;margin:0}
 .auth-label{font-size:12.5px;font-weight:500;color:var(--text-secondary)}
 .auth-input,.profile-input{display:block;font-family:inherit;font-size:16px;height:40px;padding:0 12px;width:100%;box-sizing:border-box;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2);color:var(--text-primary);transition:border-color .15s ease,box-shadow .15s ease}
 .auth-input:focus,.profile-input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.auth-input+.auth-label{margin-top:8px}
+.auth-form .auth-label:not(:first-child){margin-top:8px}
+.auth-input[aria-invalid=true],.auth-input[aria-invalid=true]:focus{border-color:var(--danger)}
+.auth-input[aria-invalid=true]:focus{box-shadow:0 0 0 3px var(--danger-soft)}
+.auth-field-error{margin:-4px 0 0;font-size:12px;font-weight:500;line-height:1.5;color:var(--danger-text)}
+.auth-field-error:empty{display:none}
 .auth-btn{font-family:inherit;font-size:14px;font-weight:600;height:40px;margin-top:8px;padding:0 16px;width:100%;border-radius:var(--radius-sm);border:none;cursor:pointer;background:var(--accent);color:#fff;transition:opacity .15s ease,transform .1s ease}
 .auth-btn:hover{opacity:.9}.auth-btn:active{transform:scale(.97)}.auth-btn:disabled{opacity:.5;cursor:default}
 .auth-links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -91,9 +114,13 @@ html.auth-locked body>:not(.auth-gate){visibility:hidden}
         '<p class="auth-desc" id="authDesc"></p>' +
         '<form class="auth-form" id="authForm" novalidate>' +
           '<label class="auth-label" for="authEmail">Email</label>' +
-          '<input class="auth-input" id="authEmail" name="email" type="email" autocomplete="username" placeholder="you@example.com" required>' +
+          '<input class="auth-input" id="authEmail" name="email" type="email" autocomplete="username" required aria-describedby="authEmailErr">' +
+          '<p class="auth-field-error" id="authEmailErr"></p>' +
           '<label class="auth-label" for="authPassword">Password</label>' +
-          '<input class="auth-input" id="authPassword" name="password" type="password" required>' +
+          '<div class="auth-pass-wrap"><input class="auth-input" id="authPassword" name="password" type="password" required>' +
+            '<button type="button" class="auth-eye" id="authEye" aria-label="Show password" aria-pressed="false"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="2" y1="2" x2="22" y2="22"/></svg></button></div>' +
+          '<p class="auth-help" id="authPassHelp">At least ' + MIN_PASSWORD + ' characters</p>' +
+          '<p class="auth-field-error" id="authPassErr"></p>' +
           '<button type="submit" class="auth-btn" id="authSubmit"></button>' +
         '</form>' +
         '<p class="auth-msg" id="authMsg" role="status" aria-live="polite"></p>' +
@@ -102,24 +129,68 @@ html.auth-locked body>:not(.auth-gate){visibility:hidden}
     document.body.appendChild(gate);
     const $ = id => gate.querySelector("#" + id);
     const say = (text, isError) => { $("authMsg").textContent = text || ""; $("authMsg").classList.toggle("is-error", !!isError); };
+    // Field errors: red border on the input + message under it (below any help text).
+    const fields = { email: ["authEmail", "authEmailErr"], password: ["authPassword", "authPassErr"] };
+    const fieldErr = (name, text) => {
+      const [inp, err] = fields[name];
+      $(err).textContent = text || "";
+      text ? $(inp).setAttribute("aria-invalid", "true") : $(inp).removeAttribute("aria-invalid");
+      if (text) $(inp).focus();
+    };
+    // Eye button: show/hide the password, keeping the cursor where it was.
+    const setShown = on => {
+      $("authPassword").type = on ? "text" : "password";
+      $("authEye").setAttribute("aria-pressed", on ? "true" : "false");
+      $("authEye").setAttribute("aria-label", on ? "Hide password" : "Show password");
+    };
+    $("authEye").addEventListener("mousedown", e => e.preventDefault()); // don't steal focus from the field
+    $("authEye").addEventListener("click", () => {
+      const inp = $("authPassword"), a = inp.selectionStart, b = inp.selectionEnd;
+      setShown(inp.type === "password");
+      if (document.activeElement === inp) { try { inp.setSelectionRange(a, b); } catch (e) {} }
+    });
+    const clearErrs = () => { fieldErr("email"); fieldErr("password"); say(""); };
+    Object.keys(fields).forEach(n => $(fields[n][0]).addEventListener("input", () => { if ($(fields[n][0]).getAttribute("aria-invalid")) fieldErr(n); }));
     function render(){
       const up = mode === "signup";
-      $("authDesc").textContent = up ? "Create an account to sync your budget across your devices." : "Sign in to keep your budget synced across your devices.";
+      $("authDesc").textContent = up ? "Create an account to sync your budget across your devices." : "";
       $("authSubmit").textContent = up ? "Create account" : "Sign in";
       $("authToggle").textContent = up ? "I already have an account" : "Create an account";
       $("authPassword").setAttribute("autocomplete", up ? "new-password" : "current-password");
-      $("authPassword").placeholder = up ? "At least " + MIN_PASSWORD + " characters" : "";
       $("authForgot").hidden = up;
+      $("authPassHelp").hidden = !up;
+      $("authPassword").setAttribute("aria-describedby", up ? "authPassHelp authPassErr" : "authPassErr");
     }
     render();
     const q = new URLSearchParams(location.search);
     if (q.get("error_description")) say(q.get("error_description"), true);
 
-    $("authToggle").addEventListener("click", () => { mode = mode === "signin" ? "signup" : "signin"; say(""); render(); $("authEmail").focus(); });
+    $("authToggle").addEventListener("click", () => {
+      const card = gate.querySelector(".auth-card"), from = card.offsetHeight;
+      mode = mode === "signin" ? "signup" : "signin"; clearErrs(); setShown(false); render();
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        // Fields drift in from below going to Create account, from above going back to Sign in, lightly staggered.
+        const ease = "cubic-bezier(.22,1,.36,1)", name = mode === "signup" ? "authFwd" : "authBack";
+        ["authDesc", "authForm", "authMsg"].map($).concat(gate.querySelector(".auth-links")).forEach((el, i) => {
+          el.style.animation = "none"; void el.offsetWidth; el.style.animation = name + " .45s " + ease + " " + (i * 40) + "ms both";
+        });
+        // Ease the card's height to fit the new form.
+        const to = card.offsetHeight;
+        if (from !== to) {
+          card.style.height = from + "px"; card.style.overflow = "hidden"; void card.offsetHeight;
+          card.style.transition = "height .45s " + ease; card.style.height = to + "px";
+          const done = () => { card.style.height = card.style.overflow = card.style.transition = ""; };
+          const end = e => { if (e.target === card) { card.removeEventListener("transitionend", end); done(); } };
+          card.addEventListener("transitionend", end); setTimeout(() => { card.removeEventListener("transitionend", end); done(); }, 550);
+        }
+      }
+      $("authEmail").focus({ preventScroll: true });
+    });
 
     $("authForgot").addEventListener("click", async () => {
       const email = $("authEmail").value.trim();
-      if (!emailOk(email)) { say("Enter your email above, then tap Forgot password.", true); $("authEmail").focus(); return; }
+      clearErrs();
+      if (!emailOk(email)) return fieldErr("email", "Enter your email, then tap Forgot password.");
       $("authForgot").disabled = true;
       const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
       $("authForgot").disabled = false;
@@ -129,12 +200,13 @@ html.auth-locked body>:not(.auth-gate){visibility:hidden}
     $("authForm").addEventListener("submit", async e => {
       e.preventDefault();
       const email = $("authEmail").value.trim(), password = $("authPassword").value;
-      if (!emailOk(email)) { say("Enter a valid email address.", true); $("authEmail").focus(); return; }
+      clearErrs();
+      if (!emailOk(email)) return fieldErr("email", "Enter a valid email address.");
       if (password.length < (mode === "signup" ? MIN_PASSWORD : 1)) {
-        say(mode === "signup" ? "Use at least " + MIN_PASSWORD + " characters for your password." : "Enter your password.", true);
-        $("authPassword").focus(); return;
+        return fieldErr("password", mode === "signup" ? "Use at least " + MIN_PASSWORD + " characters." : "Enter your password.");
       }
       const btn = $("authSubmit");
+      setShown(false); // back to dots so the browser offers to save the password
       btn.disabled = true; say("");
       try {
         if (mode === "signin") {
@@ -142,7 +214,9 @@ html.auth-locked body>:not(.auth-gate){visibility:hidden}
           if (error) say(friendly(error), true);
         } else {
           const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
-          if (error) say(friendly(error), true);
+          if (error && /already registered/i.test(error.message)) fieldErr("email", friendly(error));
+          else if (error && /password/i.test(error.message)) fieldErr("password", friendly(error));
+          else if (error) say(friendly(error), true);
           else if (!data.session) say("Almost done: check your email to confirm your account, then sign in here.");
         }
       } finally { btn.disabled = false; }
